@@ -1,4 +1,5 @@
 import java.net.*;
+import java.util.Scanner;
 import java.io.*;
  
 /**
@@ -8,6 +9,30 @@ import java.io.*;
  * @author www.codejava.net
  */
 public class Client {
+    Socket socket;
+    static BufferedWriter writer;
+    static BufferedReader reader;
+    String username;
+    
+    public Client(Socket socket, String username) {
+        try {
+            this.socket = socket;
+            this.username = username;
+        
+            InputStream input;
+            input = socket.getInputStream();
+            reader = new BufferedReader(new InputStreamReader(input));
+            OutputStream output = socket.getOutputStream();
+            OutputStreamWriter outWriter = new OutputStreamWriter(output);
+            writer = new BufferedWriter(outWriter);
+            
+            sendMessage(username);
+        } catch (IOException e) {
+            shutdown();
+        }
+        
+        
+    }
  
     public static void main(String[] args) {
         if (args.length < 2) return;
@@ -16,59 +41,81 @@ public class Client {
         int port = Integer.parseInt(args[1]);
         
         String username = System.console().readLine("Input username: ");
- 
-        try (Socket socket = new Socket(hostname, port)) {
- 
-            OutputStream output = socket.getOutputStream();
-            PrintWriter writer = new PrintWriter(output, true);
- 
-            Console console = System.console();
-            String text;
-            
-            text = "/login " + username;  
-            writer.println(text);
-            
-            InputStream input = socket.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-            
-            String nameACK = reader.readLine();
-            
-            if (nameACK.equals("1")) {
-                System.out.println("Name not available.");
+        
+        try {
+            Socket socket = new Socket(hostname, port);
+            Client client = new Client(socket, username);
+            client.listenIncoming();
+            client.listenOutgoing();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        System.out.println("end");
+    }
+    
+    public void sendMessage(String msg) {
+        try {
+            writer.write(msg);
+            writer.newLine();
+            writer.flush();
+        } catch (IOException e) {
+            shutdown();
+        }
+    }
+    
+    public void listenIncoming() {
+        Runnable listener = new Runnable() {
+            @Override
+            public void run() {
+                String incomingMessage;
+                
+                while (socket.isConnected()) {
+                    try {
+                        incomingMessage = reader.readLine();  
+                        if (incomingMessage == null) break;
+                        System.out.println(incomingMessage);
+                              
+                    } catch (IOException e) {
+                        shutdown();
+                        
+                    }
+                }
+            }
+        };
+        new Thread(listener).start();
+        
+    }
+    
+    public void listenOutgoing() {
+        Scanner scanner = new Scanner(System.in);
+        while (socket.isConnected()) {
+            try {
+                String msgToSend = scanner.nextLine();
+                sendMessage(msgToSend);                
+            } catch (Exception e) {
+                shutdown();
+            }
+        }
+    }
+    
+    
+    public void shutdown() {
+        if (!socket.isClosed()) {
+            try {
                 socket.close();
                 reader.close();
                 writer.close();
-                return;
+                System.out.println("Logged out " + username);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
- 
-            do {
-                text = console.readLine("Enter text: ");
- 
-                writer.println(text);
- 
-                input = socket.getInputStream();
-                reader = new BufferedReader(new InputStreamReader(input));
- 
-                String time = reader.readLine();
-                
-                if (time.equals("/quit")) {
-                    socket.close();
-                    break;
-                }
- 
-                System.out.println(time);
- 
-            } while (!text.equals("bye"));
- 
-            socket.close();
- 
-        } catch (UnknownHostException ex) {
- 
-            System.out.println("Server not found: " + ex.getMessage());
- 
-        } catch (IOException ex) {
- 
-            System.out.println("I/O error: " + ex.getMessage());
+            
         }
     }
+    
+    
 }
