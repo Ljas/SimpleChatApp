@@ -8,11 +8,19 @@ public class Server {
     ServerSocket serverSocket;
     int port;
     
+    /**
+     * Konstruktori
+     * @param serverSocket Palvelimen soketti
+     * @param port Käyttäjän antama portti
+     */
     public Server(ServerSocket serverSocket, int port) {
         this.serverSocket = serverSocket;
         this.port = port;
     }
     
+    /**
+     * Käynnistää serverin
+     */
     public void StartServer() {
         System.out.println("Server listening on port " + port);
         try {
@@ -31,6 +39,10 @@ public class Server {
         }
     }
  
+    /**
+     * @param args Portti pitää määrittää argumenttina
+     * @throws IOException kun leikitään soketeilla
+     */
     public static void main(String[] args) throws IOException {
         if (args.length < 1) return; // Suljetaan jos porttia ei ole määritelty
  
@@ -43,6 +55,9 @@ public class Server {
         
     }
     
+    /**
+     * Toivon mukaan sulkee serverSocketin kunnolla
+     */
     public void closeSocket() {
         try {
             if (serverSocket != null) serverSocket.close();                

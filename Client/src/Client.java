@@ -3,10 +3,7 @@ import java.util.Scanner;
 import java.io.*;
  
 /**
- * This program demonstrates a simple TCP/IP socket client that reads input
- * from the user and prints echoed message from the server.
- *
- * @author www.codejava.net
+ * Käyttäjän koodi
  */
 public class Client {
     Socket socket;
@@ -14,6 +11,10 @@ public class Client {
     static BufferedReader reader;
     String username;
     
+    /**
+     * @param socket Soketti
+     * @param username Käyttäjänimi mikä kysytään mainissa
+     */
     public Client(Socket socket, String username) {
         try {
             this.socket = socket;
@@ -23,8 +24,7 @@ public class Client {
             input = socket.getInputStream();
             reader = new BufferedReader(new InputStreamReader(input));
             OutputStream output = socket.getOutputStream();
-            OutputStreamWriter outWriter = new OutputStreamWriter(output);
-            writer = new BufferedWriter(outWriter);
+            writer = new BufferedWriter(new OutputStreamWriter(output));
             
             sendMessage(username);
         } catch (IOException e) {
@@ -34,6 +34,10 @@ public class Client {
         
     }
  
+    /**
+     * main kysyy käyttäjältä nimen ja laittaa säikeet päälle.
+     * @param args hostname ja portti kysytään argumenteissa
+     */
     public static void main(String[] args) {
         if (args.length < 2) return;
  
@@ -56,6 +60,10 @@ public class Client {
         System.out.println("end");
     }
     
+    /**
+     * Lähettää viestin rivinvaihdon kanssa, ja tyhjentää puskurin ettei viesti jää roikkumaan.
+     * @param msg Viesti
+     */
     public void sendMessage(String msg) {
         try {
             writer.write(msg);
@@ -66,6 +74,9 @@ public class Client {
         }
     }
     
+    /**
+     * Säie joka kuuntelee tulevia viestejä ja tulostaa ne.
+     */
     public void listenIncoming() {
         Runnable listener = new Runnable() {
             @Override
@@ -75,20 +86,23 @@ public class Client {
                 while (socket.isConnected()) {
                     try {
                         incomingMessage = reader.readLine();  
-                        if (incomingMessage == null) break;
+                        if (incomingMessage == null) break; // random korjaus
                         System.out.println(incomingMessage);
                               
                     } catch (IOException e) {
                         shutdown();
-                        
                     }
                 }
             }
         };
+        // Säie määritellään yllä, ja tässä vasta käyntiin.
         new Thread(listener).start();
         
     }
     
+    /**
+     * Kuuntelee mitä käyttäjä kirjoittelee konsoliin ja lähettää eteenpäin
+     */
     public void listenOutgoing() {
         Scanner scanner = new Scanner(System.in);
         while (socket.isConnected()) {
@@ -99,9 +113,13 @@ public class Client {
                 shutdown();
             }
         }
+        scanner.close();
     }
     
     
+    /**
+     * Shutdown sulkee kaikki mitä keksin sulkea.
+     */
     public void shutdown() {
         if (!socket.isClosed()) {
             try {
